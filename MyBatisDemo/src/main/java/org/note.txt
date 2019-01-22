@@ -1,0 +1,142 @@
+xml 中的配置
+
+
+
+
+
+typeAliases
+常用程度：***（很多情况下都会使用）
+作用：只和 XML 配置有关，为java类起别名，存在的意义仅在于用来减少类完全限定名的冗余。
+mybatis-config.xml中
+<typeAliases>
+    <typeAlias type="pojo.Person" alias="Person"/>
+</typeAliases>
+    
+加上
+
+PersonMapper.xml中
+<insert id="insertPerson" parameterType="Person" >
+    INSERT INTO PERSON(ID,USERNAME,AGE,MOBILEPHONE)VALUES (#{id},#{userName},#{age},#{mobilePhone})
+</insert>
+
+等同于
+
+PersonMapper.xml中
+<insert id="insertPerson" parameterType="pojo.Person" >
+    INSERT INTO PERSON(ID,USERNAME,AGE,MOBILEPHONE)VALUES (#{id},#{userName},#{age},#{mobilePhone})
+</insert>
+
+
+
+
+
+
+
+配置环境（environments）
+常用程度：***（几乎都要用且很重要）
+作用：配置环境，创建SqlSessionFactory。
+结构： 
+<environments default="development">
+  <environment id="development">
+    <!--事务管理器-->
+    <transactionManager type="JDBC">
+      <property name="..." value="..."/>
+    </transactionManager>
+    <!--数据源-->
+    <dataSource type="POOLED">
+      <property name="driver" value="${driver}"/>
+      <property name="url" value="${url}"/>
+      <property name="username" value="${username}"/>
+      <property name="password" value="${password}"/>
+    </dataSource>
+  </environment>
+</environments>
+
+
+事务管理器（transactionManager）
+
+在 MyBatis 中有两种类型的事务管理器（也就是 type=”[JDBC|MANAGED]”）：
+
+JDBC – 这个配置就是直接使用了 JDBC 的提交和回滚设置，它依赖于从数据源得到的连接来管理事务范围（常用）。
+MANAGED – 这个配置几乎没做什么。它从来不提交或回滚一个连接，而是让容器来管理事务的整个生命周期（比如 JEE 应用服务器的上下文）。默认情况下它会关闭连接，然而一些容器并不希望这样，因此需要将 closeConnection 属性设置为 false 来阻止它默认的关闭行为。例如:
+<transactionManager type="MANAGED">
+  <property name="closeConnection" value="false"/>
+</transactionManager>
+ps：如果你正在使用 Spring + MyBatis，则没有必要配置事务管理器，因为 Spring 模块会使用自带的管理器来覆盖前面的配置。
+
+这两种事务管理器类型都不需要任何属性。它们不过是类型别名，换句话说，你可以使用 TransactionFactory 接口的实现类的完全限定名或类型别名代替它们。
+public interface TransactionFactory {
+  void setProperties(Properties props);
+  Transaction newTransaction(Connection conn);
+  Transaction newTransaction(DataSource dataSource, TransactionIsolationLevel level, boolean autoCommit);
+}
+任何在 XML 中配置的属性在实例化之后将会被传递给 setProperties() 方法。你也需要创建一个 Transaction 接口的实现类，这个接口也很简单：
+
+public interface Transaction {
+  Connection getConnection() throws SQLException;
+  void commit() throws SQLException;
+  void rollback() throws SQLException;
+  void close() throws SQLException;
+  Integer getTimeout() throws SQLException;
+}
+使用这两个接口，你可以完全自定义 MyBatis 对事务的处理。
+
+
+
+
+
+
+
+
+
+
+
+映射器（mappers）
+常用程度：***（几乎都要用）
+用处：告诉 MyBatis 到哪里去找到SQL 映射语句。
+使用方式：1、相对于类路径的资源引用；2、完全限定资源定位符（包括 file:/// 的 URL）；3、类名和包名等。
+例如：
+<!-- 使用相对于类路径的资源引用 -->
+<mappers>
+  <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+</mappers>
+<!-- 使用完全限定资源定位符（URL） -->
+<mappers>
+  <mapper url="file:///var/mappers/AuthorMapper.xml"/>
+</mappers>
+<!-- 使用映射器接口实现类的完全限定类名 -->
+<mappers>
+  <mapper class="org.mybatis.builder.AuthorMapper"/>
+</mappers>
+<!-- 将包内的映射器接口实现全部注册为映射器 -->
+<mappers>
+  <package name="org.mybatis.builder"/>
+</mappers>
+
+
+
+
+
+
+
+
+
+
+
+另外，xml配置文件的内容必须按照顺序：
+
+properties
+settings
+typeAliases
+typeHandlers
+objectFactory
+objectWrapperFactory
+plugins
+environments
+databaseIdProvider
+mappers
+
+否则报以下错误：
+org.apache.ibatis.builder.BuilderException: Error creating document instance. 
+
+

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--PersonMapper.xml通过<mapper namespace="org.mapper.PersonMapper">绑定了IPersonMapper.java-->
+<!--IPersonMapper.java是在程序中调用mapper方法后封装返回的结果-->
+<mapper namespace="org.mapper.IPersonMapper">
+    <insert id="insertPerson" parameterType="org.pojo.Person" >
+        INSERT INTO PERSON(ID,USERNAME,AGE,MOBILEPHONE)VALUES (#{id},#{userName},#{age},#{mobilePhone})
+    </insert>
+
+    <select id="getPersonById" parameterType="int" resultType="org.pojo.Person">
+        SELECT * FROM PERSON WHERE ID=#{id}
+    </select>
+
+    <update id="updatePerson" parameterType="org.pojo.Person">
+        UPDATE PERSON SET USERNAME=#{userName},AGE=#{age},MOBILEPHONE=#{mobilePhone} WHERE ID=#{id}
+    </update>
+</mapper>
+
